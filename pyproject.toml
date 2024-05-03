@@ -10,6 +10,7 @@ python = "^3.9"
 fastapi = "^0.111.0"
 uvicorn = {extras = ["standart"], version = "^0.29.0"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.29"}
+aiosqlite = "^0.20.0"
 
 
 [build-system]

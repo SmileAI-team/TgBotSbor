@@ -1,13 +1,32 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 import uvicorn
 
-from user.views import router as users_router
+from core.config import settings
+from core.models import Base, db_helper
+from user.views import router as user_router
 
-app = FastAPI()
-app.include_router(users_router)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with db_helper.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield
 
 
-if __name__ == '__main__':
+app = FastAPI(lifespan=lifespan)
+app.include_router(router=user_router)
+
+
+@app.get("/")
+def hello_index():
+    return {
+        "message": "Hello index!",
+    }
+
+
+if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
-

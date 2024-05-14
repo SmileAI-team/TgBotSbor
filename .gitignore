@@ -1,0 +1,7 @@
+/venv/          # Игнорировать папку venv
+/.idea/         # Игнорировать папку .idea
+/.vscode/       # Игнорировать папку .vscode
+*.pyc           # Игнорировать все файлы .pyc (скомпилированные Python)
+.gitignore
+db.sqlite3
+venv

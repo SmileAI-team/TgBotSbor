@@ -17,7 +17,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan,
+
+              docs_url="/swagger",
+              openapi_url="/api/test",
+
+              )
 app.include_router(router=user_router)
 
 

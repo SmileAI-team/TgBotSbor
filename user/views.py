@@ -6,10 +6,10 @@ from core.models import db_helper
 from .schemas import User, UserCreate
 from . import crud
 
-router = APIRouter(tags=["Users"])
+router = APIRouter(tags=["Users"], prefix="/users")
 
 
-@router.get("/", response_model=List[User])
+@router.get("/list", response_model=List[User])
 async def get_users(
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):

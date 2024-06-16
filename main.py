@@ -7,6 +7,7 @@ import uvicorn
 from core.config import settings
 from core.models import Base, db_helper
 from user.views import router as user_router
+from items.views import router as items_router
 
 
 @asynccontextmanager
@@ -23,8 +24,8 @@ app = FastAPI(lifespan=lifespan,
               openapi_url="/api/test",
 
               )
-app.include_router(router=user_router)
-
+app.include_router(user_router)
+app.include_router(items_router)
 
 @app.get("/")
 def hello_index():

@@ -13,4 +13,5 @@ class Users(Base):
     card_number = Column(String, unique=True)
     google_path: Mapped[str] = mapped_column(String, nullable=True)
 
+
     items: Mapped[List["Items"]] = relationship("Items", back_populates="user")

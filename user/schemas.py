@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 class UserBase(BaseModel):
     telegram_id: str
     card_number: str
-
+    google_path: str
 
 class UserCreate(UserBase):
     pass

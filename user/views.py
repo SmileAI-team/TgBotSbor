@@ -68,3 +68,14 @@ async def delete_user(
             detail=f"User {user_id} not found",
         )
     return {"message": "User deleted successfully"}
+
+@router.post("/telegram/", response_model=User, status_code=status.HTTP_201_CREATED)
+async def create_user_by_telegram_id(
+    telegram_id: str,
+    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
+):
+    user = await crud.get_user_by_telegram_id(session=session, telegram_id=telegram_id)
+    if user:
+        return user
+    user = await crud.create_user_with_telegram_id(session=session, telegram_id=telegram_id)
+    return user

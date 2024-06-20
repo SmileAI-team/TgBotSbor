@@ -10,7 +10,7 @@ class Users(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     telegram_id = Column(String, unique=True, index=True)
-    card_number = Column(String, unique=True)
+    card_number = Column(String, unique=False, nullable=True)
     google_path: Mapped[str] = mapped_column(String, nullable=True)
 
     items: Mapped[List["Items"]] = relationship("Items", back_populates="user")

@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "smile-ai-bot",
+  "private_key_id": "1dccd401d6ed9fdf172731f97bae987303296304",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDhl9FigqKBs/2D\n7nypMSLBypPb4alDJ7LL7S4DOwt6yyfNJh3o8/e75Oa6j+iANbctkC3+xcR6qROL\nGGozs+hngrLIFfaOCRpEVtP4B/KOo5SByukKw25Ryo1QH7QRkpD/pMdnlOvDiAFi\ntS1ya77obSnaZ1EFIYeOsqOF76hL1otQ/vjm467ah7Wg5Xui2i/6kxJcwrUPzYzl\ntEUH3QSBrziNHPNei/2dnB5Q58Gms1Jgahr1YdAVWBG7vm4HXKJshBsATXXNJOcu\nfIt3yU1eNEjC7pXPEPh/O/d4eRMOKV/z9MHG1Adus6TS8y+DiCLxx/fYhmL8gkZw\ngrFU/iQDAgMBAAECggEAJmApnczkMRU5yJIuwadapsW7vllWblaX+0nHHISUUNiz\nVhooV2L9Hwjy2QS3A+xfU1BmCqOA527QpMZL9qyhmc4pdJEL5qCUx9BPca+EaxBX\nqHaoiwywvRgsTtd9zcl1gg95Xlz+eD4wIib46rB6gtZjGsSdizZndXZdC+E3a2Lr\ngCpwj+qyiJoTbswrQ4VilAT6QbeoycibKU80xdAr3aqbJB5j6RV1hlXOLrILWPUJ\ny9dTA0qfHVGoxYWQffkC0ABaFzTJ5/GjMiISbRplwDuPJHHwSnZvNqB4X3d3voAI\nwzUzQjD4QkwF72fOaTdac/w7L7mqokNYO6Z2J/Au/QKBgQDwlGzm71Nqas+STofF\n9O4JR31dJ7IKNgM2CWTlC6jQ8uwWZbxn4zBRsj4856LB7oYAVZJudlwRLCtWK/RV\nKPOMZ93Kcms0Z7iLOi6OQ0dd25SgLKa8zQP6ZKLId3sZXZ4eUOSr3tcKmiA2Ghdg\nMaL5xFWExJlzTKb8sA3Uw+FA9wKBgQDwDXsrzaxuqHI6JkxZNEBC6VU9R6q2da/R\nkFo2IplQTJt1TuUwOoOrjoVUgBnLJW+zLW7dIOsH4FPqnqCLt04NZTc1Fue6v7Y0\nQcw2vuWBXdSLaax3Bz8jn6PlTnL0QnoqhPiVgEiGUEf4vcFw/Q2j59Hg8asjyn5t\nSWbY6BZ+VQKBgGzpdMezTtsdUa0Veifm8yAmSh2zC8nNm/SJmjCK77jwUGrvUbTi\nSAykGcLuxmLvPaDHHIx/bryjd1cCfRFUgbVtjB3LYLcPwZ7eDxd+Y7+c2ZMNw8oz\nMfrYNk10sbjRBfUJgAxCzK1TCwQTGcQFlJdoB6Mcca+d4vcAKLLKnp4PAoGBANjy\nhhe/aJAVoi5VgHi6FT2jnQql423FDKHrwOvd9wswQOsS42Tj7S21v1/v6d/DtKCN\ndf1ZC7Bxl8WZmOTMRDks+Wj8i28mZefyczoi6k4xW66nUVu9a92pIDlT3eZM0hXt\nWK/cYS8qDPGLpPCVcqdoEjEmmBHfpsTkKpPrpLCFAoGBAICLz+bNls5D77l7xlF2\n4IbJ0zvxQzKtDqGvNY7kA0LcsW4f7e5smi+4TwcjApK28GdkcaKC9xiKiePoylfR\nYrgRNPnYWrY2JfJEXPSC6T2WPsEhagcWH186LDbHWoM3gsKk6DvhSpkiQXjsI1ED\nBxEi28KijAJ8PezEaLiEuzj4\n-----END PRIVATE KEY-----\n",
+  "client_email": "smileaibotiam@smile-ai-bot.iam.gserviceaccount.com",
+  "client_id": "103000871070514567413",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/smileaibotiam%40smile-ai-bot.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

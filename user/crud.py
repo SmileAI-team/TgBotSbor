@@ -57,10 +57,11 @@ async def get_user_by_telegram_id(session: AsyncSession, telegram_id: str):
     return result.scalars().first()
 
 async def create_user_with_telegram_id(session: AsyncSession, telegram_id: str):
-    google_path = create_folder(f"User_{telegram_id}", settings.google_drive_parent_folder_id)
+    google_path = await create_folder(f"User_{telegram_id}", settings.google_drive_parent_folder_id)
+
     user_in = UserCreate(telegram_id=telegram_id, card_number="", google_path=google_path)
-    user = Users(**user_in.model_dump())
+    user = Users(**user_in.dict())
+
     session.add(user)
     await session.commit()
-    await session.refresh(user)
     return user

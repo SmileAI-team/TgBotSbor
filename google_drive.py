@@ -1,16 +1,25 @@
+import json
+import aiohttp
 from google.oauth2 import service_account
-from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 from core.config import settings
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = 'smile-ai-bot-1dccd401d6ed.json'  # Путь к файлу с ключом
+SERVICE_ACCOUNT_FILE = 'smile-ai-bot-1dccd401d6ed.json'
 
+# Загрузка учетных данных
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-drive_service = build('drive', 'v3', credentials=credentials)
 
-def create_folder(folder_name: str, parent_folder_id: str = None) -> str:
-    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-    service = build('drive', 'v3', credentials=credentials)  # Перемещаем создание service сюда
+async def get_access_token():
+    credentials.refresh(Request())
+    return credentials.token
+
+async def create_folder(folder_name: str, parent_folder_id: str = None) -> str:
+    access_token = await get_access_token()
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
 
     file_metadata = {
         'name': folder_name,
@@ -19,5 +28,13 @@ def create_folder(folder_name: str, parent_folder_id: str = None) -> str:
     if parent_folder_id:
         file_metadata['parents'] = [parent_folder_id]
 
-    file = service.files().create(body=file_metadata, fields='id').execute()
-    return f"https://drive.google.com/drive/folders/{file.get('id')}"
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            'https://www.googleapis.com/drive/v3/files',
+            headers=headers,
+            data=json.dumps(file_metadata)
+        ) as response:
+            if response.status != 200:
+                raise Exception(f"Error creating folder: {response.status}")
+            result = await response.json()
+            return f"https://drive.google.com/drive/folders/{result['id']}"

@@ -1,12 +1,13 @@
 
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from core.models import db_helper
 from .schemas import Item, ItemCreate, ItemUpdate
 from . import crud
+from services import process_files
 
 router = APIRouter(tags=["Items"], prefix="/items")
 
@@ -70,3 +71,14 @@ async def delete_item(
             detail=f"Item {item_id} not found",
         )
     return {"message": "Item deleted successfully"}
+
+@router.post("/upload/")
+async def upload_files(
+    telegram_id: str = Form(...),
+    files: List[UploadFile] = File(...),  # Используем List из typing
+    comment: str = Form(...),
+    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
+):
+    file_contents = [await file.read() for file in files]
+    response = await process_files(telegram_id, file_contents, comment, session)
+    return response

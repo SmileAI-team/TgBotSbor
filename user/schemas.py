@@ -15,5 +15,6 @@ class User(UserBase):
 
     id: int
 
+
 class UserUpdate(UserBase):
     pass

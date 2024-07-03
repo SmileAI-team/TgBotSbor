@@ -3,11 +3,12 @@ from aiogram import Router, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import FSInputFile
 from external_services.backend_requests import create_user_by_telegram, upload_files
 from keyboards.user_keyboards import upload_keyboard, comment_keyboard, start_upload_keyboard
 import httpx
 from typing import Tuple
-
+import os
 
 # Инициализация логгера
 logger = logging.getLogger(__name__)
@@ -62,7 +63,13 @@ async def start_upload(message: types.Message, state: FSMContext):
     Начало процесса загрузки фотографий.
     """
     user_data[message.from_user.id] = {'photos': [], 'comment': ''}
-    await message.answer("Отправьте первую фотографию.", reply_markup=upload_keyboard)
+    photo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "photos", "front.jpg")
+    photo = FSInputFile(photo_path)
+    await message.answer_photo(
+        photo=photo,
+        text="Отправьте фото фронтальной проекции зубов.",
+        caption="Отправьте фото фронтальной проекции зубов.",
+        reply_markup=upload_keyboard)
     await state.set_state(UploadStates.waiting_for_photo)
 
 
@@ -74,7 +81,13 @@ async def handle_start_upload(call: types.CallbackQuery, state: FSMContext):
     """
     user_id = call.from_user.id
     user_data[user_id] = {'photos': [], 'comment': ''}
-    await call.message.answer("Отправьте первую фотографию.", reply_markup=upload_keyboard)
+    photo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "photos", "front.jpg")
+    photo=FSInputFile(photo_path)
+    await call.message.answer_photo(
+        photo=photo,
+        #text="Отправьте фото фронтальной проекции зубов.",
+        caption="Отправьте фото фронтальной проекции зубов.",
+        reply_markup=upload_keyboard)
     await state.set_state(UploadStates.waiting_for_photo)
     await call.answer()
 
@@ -96,11 +109,24 @@ async def handle_photo(message: types.Message, state: FSMContext):
     logger.info(f"User {user_id} uploaded photo {photos_count}.")
 
     # Check if all 3 photos are uploaded
-    if photos_count == 3:
+    if photos_count == 1:
+        photo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "photos", "upper.jpg")
+        photo=FSInputFile(photo_path)
+        await message.answer_photo(
+            photo=photo,
+            caption="Фото фронтальной проекции получено, загрузите фото верхних зубов.",
+            reply_markup=upload_keyboard)
+    elif photos_count == 2:
+        photo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "photos", "lower.jpg")
+        photo=FSInputFile(photo_path)
+        await message.answer_photo(
+            photo=photo,
+            caption="Фото верхней проекции получено, загрузите фото нижних зубов.",
+            reply_markup=upload_keyboard)
+    elif photos_count == 3:
         await message.answer("Все 3 фото получены. Отправьте комментарий или используйте команду /skip для пропуска комментария.", reply_markup=comment_keyboard)
         await state.set_state(UploadStates.waiting_for_comment)
-    elif photos_count < 3:
-        await message.answer(f"Фото {photos_count} получено. Отправьте еще {3 - photos_count} фото(графий).", reply_markup=upload_keyboard)
+
 
 # Функция прерывания отправки фото
 @router.callback_query(lambda call: call.data == 'skip_photo')

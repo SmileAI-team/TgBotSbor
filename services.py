@@ -110,6 +110,10 @@ async def process_files(telegram_id: str, files: List[Union[io.BytesIO, bytes]],
         file_name = f"{label}_{original_filename}.jpg"
         await upload_file(file_name=file_name, folder_id=folder_id, file_content=result_image_bytes)
 
+    # txt comment
+    comment_file_content = io.BytesIO(comment.encode('utf-8'))
+    await upload_file(file_name="comment.txt", folder_id=folder_id, file_content=comment_file_content)
+
     # Создаем запись в базе данных
     item = ItemCreate(
         user_id=user.id,
@@ -117,7 +121,7 @@ async def process_files(telegram_id: str, files: List[Union[io.BytesIO, bytes]],
         google_drive_path=f"https://drive.google.com/drive/folders/{folder_id}",
         viewed=False,
         validated=False,
-        comment=comment
+        comment=""
     )
     await create_item(db, item)
 

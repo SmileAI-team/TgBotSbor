@@ -8,6 +8,7 @@ from core.models import db_helper
 from .schemas import Item, ItemCreate, ItemUpdate
 from . import crud
 from services import process_files
+from core.config import settings
 
 router = APIRouter(tags=["Items"], prefix="/items")
 
@@ -79,6 +80,12 @@ async def upload_files(
     comment: str = Form(...),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
-    file_contents = [await file.read() for file in files]
+    file_contents = []
+    for file in files:
+        content = await file.read()
+        if len(content) > settings.MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail=f"File {file.filename} exceeds the maximum size")
+        file_contents.append(content)
+
     response = await process_files(telegram_id, file_contents, comment, session)
     return response

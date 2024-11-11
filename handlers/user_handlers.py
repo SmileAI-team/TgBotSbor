@@ -34,7 +34,7 @@ async def send_welcome(message: types.Message):
     """
     Приветственное сообщение при старте бота. Создает пользователя в базе по его Telegram ID.
     """
-    await message.answer("Привет! Этот бот создан для удобной загрузки фотографий полости рта и анамнеза.")
+    await message.answer("Привет! Этот бот поможет тебе узнать в каком состоянии твои зубки🦷")
 
     telegram_id = str(message.from_user.id)
 
@@ -44,10 +44,10 @@ async def send_welcome(message: types.Message):
         logger.info(f"Response status code: {response.status_code}")
         logger.info(f"Response content: {response.json()}")
         if response.status_code == 200:
-            await message.answer("Поздравляю, Вы добавлены в базу!")
+            # await message.answer("Поздравляю, Вы добавлены в базу!")
             await message.answer("Чтобы загрузить фото, используй команду /upload", reply_markup=start_upload_keyboard)
         elif response.status_code == 201:
-            await message.answer("Поздравляю, Вы уже добавлены в базу!")
+            # await message.answer("Поздравляю, Вы уже добавлены в базу!")
             await message.answer("Чтобы загрузить фото, используй команду /upload", reply_markup=start_upload_keyboard)
         else:
             await message.answer("Произошла ошибка при создании пользователя.")

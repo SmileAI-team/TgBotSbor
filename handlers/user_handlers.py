@@ -1,26 +1,33 @@
 import logging
-from aiogram import Router, types, F
+from aiogram import Router, types, F, Bot
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import FSInputFile
 from external_services.backend_requests import create_user_by_telegram, upload_files
-from keyboards.user_keyboards import upload_keyboard, comment_keyboard, start_upload_keyboard
-import httpx
-from typing import Tuple
+from keyboards.user_keyboards import upload_keyboard, comment_keyboard, start_upload_keyboard, consent_keyboard, ready_keyboard
 import os
+import cv2
+import numpy as np
+from io import BytesIO
 
 # Инициализация логгера
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(filename)s:%(lineno)d #%(levelname)-8s '
-           '[%(asctime)s] - %(name)s - %(message)s')
+    format='%(filename)s:%(lineno)d #%(levelname)-8s %(message)s'
+)
 
 router = Router()
 
+class ConsentStates(StatesGroup):
+    waiting_for_consent = State()
+
 # Класс для определения состояний загрузки фотографий и комментариев
 class UploadStates(StatesGroup):
+    waiting_for_front_teeth_photo = State()
+    waiting_for_upper_teeth_gums_photo = State()
+    waiting_for_lower_teeth_gums_photo = State()
     waiting_for_photo = State()
     waiting_for_comment = State()
 
@@ -29,32 +36,30 @@ user_data = {}
 
 # Обработчик команды /start
 @router.message(CommandStart())
-
-async def send_welcome(message: types.Message):
+async def send_welcome(message: types.Message, state: FSMContext):
     """
     Приветственное сообщение при старте бота. Создает пользователя в базе по его Telegram ID.
     """
-    await message.answer("Привет! Этот бот поможет тебе узнать в каком состоянии твои зубки🦷")
+    await message.answer("Добро пожаловать! Этот бот поможет провести диагностику состояния зубов \
+с использованием фотографий и искусственного интеллекта. Вы получите предварительные \
+рекомендации по уходу за зубами, но это не заменяет визит к стоматологу🦷")
 
-    telegram_id = str(message.from_user.id)
+    await message.answer("Для использования нашего сервиса требуется ваше согласие на обработку персональных данных, \
+включая фотографии полости рта. Эти данные будут использоваться только для диагностики и предоставления рекомендаций. \
+Вы можете ознакомиться с [Политикой конфиденциальности](https://example.com/privacy).",
+                         reply_markup=consent_keyboard)
+    await state.set_state(ConsentStates.waiting_for_consent)
 
-    try:
-        logger.info(f"Sending request to API with params {telegram_id}")
-        response = await create_user_by_telegram(telegram_id)
-        logger.info(f"Response status code: {response.status_code}")
-        logger.info(f"Response content: {response.json()}")
-        if response.status_code == 200:
-            # await message.answer("Поздравляю, Вы добавлены в базу!")
-            await message.answer("Чтобы загрузить фото, используй команду /upload", reply_markup=start_upload_keyboard)
-        elif response.status_code == 201:
-            # await message.answer("Поздравляю, Вы уже добавлены в базу!")
-            await message.answer("Чтобы загрузить фото, используй команду /upload", reply_markup=start_upload_keyboard)
-        else:
-            await message.answer("Произошла ошибка при создании пользователя.")
-    except httpx.RequestError as e:
-        logger.error(f"Failed to create user: {e}")
-        await message.answer("Произошла ошибка при подключении к серверу.")
-
+# Обработчик согласия на обработку данных
+@router.callback_query(lambda call: call.data in ["consent_yes", "consent_no"])
+async def handle_consent(call: types.CallbackQuery, state: FSMContext):
+    if call.data == "consent_yes":
+        await call.message.answer("Спасибо за доверие! Теперь перейдем к подготовке к диагностике. /upload", reply_markup=start_upload_keyboard)
+        await state.clear()
+    else:
+        await call.message.answer("К сожалению, без вашего согласия на обработку персональных данных диагностика невозможна. Если вы передумаете, просто запустите бота снова /start.")
+        await state.clear()
+    await call.answer()
 
 # Обработчик команды /upload
 @router.message(Command(commands=['upload']))
@@ -63,15 +68,82 @@ async def start_upload(message: types.Message, state: FSMContext):
     Начало процесса загрузки фотографий.
     """
     user_data[message.from_user.id] = {'photos': [], 'comment': ''}
-    photo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "photos", "front.jpg")
-    photo = FSInputFile(photo_path)
-    await message.answer_photo(
-        photo=photo,
-        text="Отправьте фото фронтальной проекции зубов.",
-        caption="Отправьте фото фронтальной проекции зубов.",
-        reply_markup=upload_keyboard)
-    await state.set_state(UploadStates.waiting_for_photo)
+    await send_preparation_instructions(message)
 
+async def send_preparation_instructions(message: types.Message):
+    """
+    Отправка инструкции по подготовке к съемке.
+    """
+    instructions = (
+        "Перед тем как сделать фото, пожалуйста, следуйте этим советам:\n"
+        "1. Найдите хорошо освещенное место.\n"
+        "2. Используйте вспышку, если это необходимо.\n"
+        "3. Протрите камеру, чтобы избежать размытых изображений.\n\n"
+        "Когда будете готовы, нажмите 'Готово'."
+    )
+    await message.answer(instructions, reply_markup=ready_keyboard)
+
+# Обработчик инлайн команды ready
+@router.callback_query(lambda call: call.data == 'ready')
+async def handle_ready(call: types.CallbackQuery, state: FSMContext):
+    """
+    Обработка нажатия кнопки 'Готово' и запрос первой фотографии.
+    """
+    await request_front_teeth_photo(call.message)
+    await state.set_state(UploadStates.waiting_for_front_teeth_photo)
+
+# Функции для запроса фотографий
+async def request_front_teeth_photo(message: types.Message):
+    instructions = (
+        "Пожалуйста, сделайте фото передних зубов.\n"
+        "Когда фото будет готово, отправьте его в чат."
+    )
+    await message.answer(instructions)
+
+async def request_upper_teeth_gums_photo(message: types.Message):
+    instructions = (
+        "Пожалуйста, сделайте фото верхних зубов и десен.\n"
+        "Когда фото будет готово, отправьте его в чат."
+    )
+    await message.answer(instructions)
+
+async def request_lower_teeth_gums_photo(message: types.Message):
+    instructions = (
+        "Пожалуйста, сделайте фото нижних зубов и десен.\n"
+        "Когда фото будет готово, отправьте его в чат."
+    )
+    await message.answer(instructions)
+
+# Обработчики для получения фотографий
+@router.message(UploadStates.waiting_for_front_teeth_photo)
+async def handle_front_teeth_photo(message: types.Message, state: FSMContext):
+    photo = message.photo[-1]
+    if await is_photo_blurry(message.bot, photo):
+        await message.answer("Фото получилось нечетким. Пожалуйста, попробуйте сделать его снова.")
+        return
+    user_data[message.from_user.id]['photos'].append(photo.file_id)
+    await request_upper_teeth_gums_photo(message)
+    await state.set_state(UploadStates.waiting_for_upper_teeth_gums_photo)
+
+@router.message(UploadStates.waiting_for_upper_teeth_gums_photo)
+async def handle_upper_teeth_gums_photo(message: types.Message, state: FSMContext):
+    photo = message.photo[-1]
+    if await is_photo_blurry(message.bot, photo):
+        await message.answer("Фото получилось нечетким. Пожалуйста, попробуйте сделать его снова.")
+        return
+    user_data[message.from_user.id]['photos'].append(photo.file_id)
+    await request_lower_teeth_gums_photo(message)
+    await state.set_state(UploadStates.waiting_for_lower_teeth_gums_photo)
+
+@router.message(UploadStates.waiting_for_lower_teeth_gums_photo)
+async def handle_lower_teeth_gums_photo(message: types.Message, state: FSMContext):
+    photo = message.photo[-1]
+    if await is_photo_blurry(message.bot, photo):
+        await message.answer("Фото получилось нечетким. Пожалуйста, попробуйте сделать его снова.")
+        return
+    user_data[message.from_user.id]['photos'].append(photo.file_id)
+    await message.answer("Спасибо! Все фотографии получены.")
+    await state.clear()
 
 # Обработчик инлайн команды start_upload
 @router.callback_query(lambda call: call.data == 'start_upload')
@@ -79,17 +151,8 @@ async def handle_start_upload(call: types.CallbackQuery, state: FSMContext):
     """
     Начало процесса загрузки фотографий по инлайн кнопке.
     """
-    user_id = call.from_user.id
-    user_data[user_id] = {'photos': [], 'comment': ''}
-    photo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "photos", "front.jpg")
-    photo=FSInputFile(photo_path)
-    await call.message.answer_photo(
-        photo=photo,
-        #text="Отправьте фото фронтальной проекции зубов.",
-        caption="Отправьте фото фронтальной проекции зубов.",
-        reply_markup=upload_keyboard)
-    await state.set_state(UploadStates.waiting_for_photo)
-    await call.answer()
+    user_data[call.from_user.id] = {'photos': [], 'comment': ''}
+    await send_preparation_instructions(call.message)
 
 # Обработчик загрузки фотографии
 @router.callback_query(lambda call: call.data == 'upload_photo')
@@ -191,3 +254,54 @@ async def send_photos_to_backend(message: types.Message, user_id: int, photos: l
     except Exception as e:
         logger.error(f"Failed to upload photos: {e}")
         await message.answer("Произошла ошибка при загрузке фотографий. Попробуйте снова.", reply_markup=types.ReplyKeyboardRemove())
+
+async def is_photo_blurry(bot: Bot, photo: types.PhotoSize) -> bool:
+    """
+    Проверяет, является ли фото нечетким.
+    """
+    file_info = await bot.get_file(photo.file_id)
+    file = await bot.download_file(file_info.file_path)
+    file_bytes = BytesIO(file.read())
+    image = np.asarray(bytearray(file_bytes.read()), dtype="uint8")
+    image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+    laplacian_var = cv2.Laplacian(image, cv2.CV_64F).var()
+    print(laplacian_var)
+    return laplacian_var < 1  # Пороговое значение для определения нечеткости
+
+# Обработчик команды /analyze данную функцию допишем позже
+async def analyze_and_send_results(bot: Bot, message: types.Message, photos: list):
+    """
+    Анализирует фотографии и отправляет результаты пользователю.
+    """
+    results = []
+    for photo_id in photos:
+        photo = await bot.get_file(photo_id)
+        file = await bot.download_file(photo.file_path)
+        file_bytes = BytesIO(file.read())
+        image = np.asarray(bytearray(file_bytes.read()), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_GRAYSCALE)
+
+        # Пример анализа изображения (MVP)
+        laplacian_var = cv2.Laplacian(image, cv2.CV_64F).var()
+        if laplacian_var < 1:
+            results.append("Фото нечеткое.")
+        else:
+            # Пример анализа (будет доработан в будущем)
+            if detect_caries(image):
+                results.append("Обнаружен кариес.")
+            elif detect_plaque(image):
+                results.append("Обнаружен налет.")
+            else:
+                results.append("Идеальные зубы.")
+
+    # Отправка результатов пользователю
+    result_message = "\n".join(results)
+    await message.answer(result_message)
+
+def detect_caries(image):
+    # Пример функции для обнаружения кариеса (будет доработана в будущем)
+    return False
+
+def detect_plaque(image):
+    # Пример функции для обнаружения налета (будет доработана в будущем)
+    return False

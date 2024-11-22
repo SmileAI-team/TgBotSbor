@@ -24,3 +24,22 @@ start_upload_keyboard = InlineKeyboardMarkup(
         ]
     ]
 )
+# Кнопка согласия на обработку данных
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+consent_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Да, я согласен", callback_data="consent_yes"),
+            InlineKeyboardButton(text="Нет, не согласен", callback_data="consent_no")
+        ]
+    ]
+)
+# Кнопка готовности пользователя к диагностике
+ready_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Готово", callback_data="ready")
+        ]
+    ]
+)

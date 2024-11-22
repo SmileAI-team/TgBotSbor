@@ -7,11 +7,14 @@ from config_data.config import Config, load_config
 config: Config = load_config()
 API_BASE_URL = config.api_url
 logger = logging.getLogger(__name__)
+
+# Настраиваем логгер
 logging.basicConfig(
     level=logging.INFO,
     format='%(filename)s:%(lineno)d #%(levelname)-8s '
            '[%(asctime)s] - %(name)s - %(message)s')
 
+# Асинхронная функция для получения списка пользователей
 async def fetch_users() -> List[Dict[str, Any]]:
     async with httpx.AsyncClient() as client:
         logger.info(f"Fetching users from {API_BASE_URL}/users/list")
@@ -19,6 +22,7 @@ async def fetch_users() -> List[Dict[str, Any]]:
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Создание пользователя
 async def create_user(telegram_id: str, card_number: str, google_path: str) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
         payload = {
@@ -31,6 +35,7 @@ async def create_user(telegram_id: str, card_number: str, google_path: str) -> D
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Получение пользователя
 async def get_user(user_id: int) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
         logger.info(f"Fetching user {user_id} from {API_BASE_URL}/users/{user_id}/")
@@ -38,6 +43,7 @@ async def get_user(user_id: int) -> Dict[str, Any]:
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Обновление пользователя
 async def update_user(user_id: int, telegram_id: str, card_number: str, google_path: str) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
         payload = {
@@ -50,6 +56,7 @@ async def update_user(user_id: int, telegram_id: str, card_number: str, google_p
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Удаление пользователя
 async def delete_user(user_id: int) -> None:
     async with httpx.AsyncClient() as client:
         logger.info(f"Deleting user {user_id} from {API_BASE_URL}/users/{user_id}/")
@@ -57,6 +64,7 @@ async def delete_user(user_id: int) -> None:
         logger.info(f"Received response {response.status_code}: {response.text}")
         return response.text
 
+# Создание пользователя по telegram_id
 async def create_user_by_telegram(telegram_id: str) -> httpx.Response:
     async with httpx.AsyncClient() as client:
         params = {"telegram_id": telegram_id}
@@ -65,6 +73,7 @@ async def create_user_by_telegram(telegram_id: str) -> httpx.Response:
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response
 
+# Получение пользователя по telegram_id
 async def fetch_items() -> List[Dict[str, Any]]:
     async with httpx.AsyncClient() as client:
         logger.info(f"Fetching items from {API_BASE_URL}/items/list")
@@ -72,6 +81,7 @@ async def fetch_items() -> List[Dict[str, Any]]:
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Создание элемента
 async def create_item(user_id: int, time: str, google_drive_path: str, viewed: bool, validated: bool, comment: str) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
         payload = {
@@ -87,6 +97,7 @@ async def create_item(user_id: int, time: str, google_drive_path: str, viewed: b
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Получение элемента
 async def get_item(item_id: int) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
         logger.info(f"Fetching item {item_id} from {API_BASE_URL}/items/{item_id}/")
@@ -94,6 +105,7 @@ async def get_item(item_id: int) -> Dict[str, Any]:
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Обновление элемента
 async def update_item(item_id: int, user_id: int, time: str, google_drive_path: str, viewed: bool, validated: bool, comment: str) -> Dict[str, Any]:
     async with httpx.AsyncClient() as client:
         payload = {
@@ -109,6 +121,7 @@ async def update_item(item_id: int, user_id: int, time: str, google_drive_path: 
         logger.info(f"Received response {response.status_code}: {response.json()}")
         return response.json()
 
+# Удаление элемента
 async def delete_item(item_id: int) -> None:
     async with httpx.AsyncClient() as client:
         logger.info(f"Deleting item {item_id} from {API_BASE_URL}/items/{item_id}/")
@@ -116,7 +129,7 @@ async def delete_item(item_id: int) -> None:
         logger.info(f"Received response {response.status_code}: {response.text}")
         return response.text
 
-
+# Загрузка файлов
 async def upload_files(telegram_id: str, files: List[Tuple[str, bytes]], comment: str) -> dict:
     timeout = httpx.Timeout(10.0, read=None)
     async with httpx.AsyncClient(timeout=timeout) as client:

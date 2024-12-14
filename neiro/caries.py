@@ -57,7 +57,7 @@ class Caries:
 
         # Проверяем, есть ли боксы в результатах
         if len(results[0].boxes) == 0:
-            raise ValueError("Model did not detect any objects in the image.")
+            return -1
 
         # Извлекаем первый бокс (или используем максимальное значение уверенности)
         box = max(results[0].boxes, key=lambda b: b.conf.cpu().item())

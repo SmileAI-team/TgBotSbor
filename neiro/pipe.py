@@ -16,9 +16,9 @@ from pathlib import Path
 output_boxes_folder = Path("./results/cropped_boxes")
 output_drawn_path = Path("./results/drawn_boxes_7.jpg")
 
-test_image_1 = image_to_numpy("../photos/0.95_Upper_2023-08-12-05-32-45_Upper_jpg.jpg")
-test_image_2 = image_to_numpy("../photos/0.90_Front_Fig32_MYS_JPG.jpg")
-test_image_3 = image_to_numpy("../photos/0.95_Lower_2023-08-24-10-05-05_Lower_jpg.jpg")
+test_image_1 = image_to_numpy("./results/0.90_Front_Frame_1146_JPG.jpg")
+test_image_2 = image_to_numpy("./results/0.95_Upper_2023-08-12-05-36-04_Upper_jpg.jpg")
+test_image_3 = image_to_numpy("./results/0.96_Lower_253_jpg.jpg")
 test_list = [test_image_1, test_image_2, test_image_3]
 
 

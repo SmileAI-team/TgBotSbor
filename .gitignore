@@ -24,3 +24,6 @@ poetry.lock
 
 # Игнорирование конфиденциальных файлов
 .env
+models/yolo11x_merget_dataset_best.pt
+models/yolov8x_merged_dataset_best.pt
+neiro/results

@@ -13,13 +13,13 @@ from pathlib import Path
 # 1: "Небольшое повреждение",
 # 2: "Здоров "
 
-#output_boxes_folder = Path("./results/cropped_boxes")
-#output_drawn_path = Path("./results/drawn_boxes_7.jpg")
+output_boxes_folder = Path("D:/PycharmProjects/TgBotSbor/photos/cropped_boxes")
+output_drawn_path = Path("D:/PycharmProjects/TgBotSbor/photos/drawn_boxes_7.jpg")
 
-#test_image_1 = image_to_numpy("./results/0.90_Front_Frame_1146_JPG.jpg")
-#test_image_2 = image_to_numpy("./results/0.95_Upper_2023-08-12-05-36-04_Upper_jpg.jpg")
-#test_image_3 = image_to_numpy("./results/0.96_Lower_253_jpg.jpg")
-#test_list = [test_image_1, test_image_2, test_image_3]
+test_image_1 = image_to_numpy("D:/PycharmProjects/TgBotSbor/photos/0.90_Front_Frame_1146_JPG.jpg")
+test_image_2 = image_to_numpy("D:/PycharmProjects/TgBotSbor/photos/0.95_Upper_2023-08-12-05-36-04_Upper_jpg.jpg")
+test_image_3 = image_to_numpy("D:/PycharmProjects/TgBotSbor/photos/0.96_Lower_253_jpg.jpg")
+test_list = [test_image_1, test_image_2, test_image_3]
 
 
 def pipeline_caries(list_images: List[np.ndarray]):
@@ -63,12 +63,12 @@ def save_resylts(list_images: List[np.ndarray]):
     for index, image in enumerate(list_images):
         save_image_from_numpy(image, f"results_pipe_{index}.jpg")
 
-#save_dataclass(datacls_list[1], Path("./results/mouth_image_1.json"))
+#save_dataclass(datacls_list[1], Path("./photos/mouth_image_1.json"))
 
 
-#error, result_list, result_dict = pipeline_caries(test_list)
-#if error is None:
-#    save_resylts(result_list)
-#    print(result_dict)
-#else:
-#    print(error)
+error, result_list, result_dict = pipeline_caries(test_list)
+if error is None:
+   save_resylts(result_list)
+   print(result_dict)
+else:
+   print(error)

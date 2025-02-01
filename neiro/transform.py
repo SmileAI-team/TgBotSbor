@@ -23,7 +23,7 @@ def image_to_numpy(image_path):
 
 
 def save_image_from_numpy(image_array, filename):
-    save_dir = Path("./results")
+    save_dir = Path("D:\PycharmProjects\TgBotSbor\photos")
     save_path = Path(save_dir) / filename
 
     image = Image.fromarray(image_array.astype(np.uint8))

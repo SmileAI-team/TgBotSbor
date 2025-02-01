@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from environs import Env
+from typing import Union
 
 
 @dataclass
@@ -23,7 +24,7 @@ class Config:
     api_url: str
 
 
-def load_config(path: str | None = None) -> Config:
+def load_config(path: Union[str, None] = None) -> Config:
 
     env: Env = Env()
     env.read_env(path)

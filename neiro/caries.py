@@ -67,9 +67,9 @@ class Caries:
         return predicted_class
 
 
-model_path = Path("./models/kaif_caries.pt")
+model_path = Path("neiro/models/kaif_caries.pt")
 caries_model = Caries(model_path)
 
-# img = image_to_numpy("./results/cropped_boxes/box_10.jpg")
+# img = image_to_numpy("./photos/cropped_boxes/box_10.jpg")
 #
 # print(caries_model.analyze_array(img))

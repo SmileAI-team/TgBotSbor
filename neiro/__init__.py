@@ -8,6 +8,7 @@ class CariesTooth:
     caries_coord: List[int]
     caries_type: int
 
+
 @dataclass
 class Tooth:
     tooth_array: np.ndarray

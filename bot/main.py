@@ -5,11 +5,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
-from config_data.config import Config, load_config
+from .config_data.config import Config, load_config
 # Импортируем роутеры
-from handlers import user_handlers
+from .handlers import user_handlers
 # Импортируем миддлвари
-from middlewares.custom_logging import CustomLoggingMiddleware
+from .middlewares.custom_logging import CustomLoggingMiddleware
 # Импортируем вспомогательные функции для создания нужных объектов
 # ...
 #from keyboards.main_menu import set_main_menu
@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command="/start", description="Запустить бота"),
-        BotCommand(command="/upload", description="Загрузить фото"),
     ]
     await bot.set_my_commands(commands)
 

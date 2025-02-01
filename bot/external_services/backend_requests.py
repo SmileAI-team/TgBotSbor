@@ -1,7 +1,7 @@
 import httpx
 import logging
 from typing import List, Dict, Any, Tuple
-from config_data.config import Config, load_config
+from bot.config_data.config import Config, load_config
 
 # Загружаем конфиг в переменную config
 config: Config = load_config()

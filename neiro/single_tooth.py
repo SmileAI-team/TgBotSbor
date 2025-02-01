@@ -5,18 +5,9 @@ import numpy as np
 from pathlib import Path
 from PIL import Image, ImageDraw
 from ultralytics import YOLO
+from neiro import Tooth, MouthImage
 from .transform import image_to_numpy
 
-@dataclass
-class Tooth:
-    tooth_array: np.ndarray
-    tooth_coord: List[int]
-
-@dataclass
-class MouthImage:
-    array: np.ndarray
-    mouth_type: str
-    boxes: List[Tooth] = field(default_factory=list)
 
 class SingleTooth:
     def __init__(self, model_path: str):
@@ -88,12 +79,12 @@ class SingleTooth:
 
 
 # Пример использования
-model_path = Path("./models/yolov8x_merged_dataset_best.pt")
+model_path = Path("neiro/models/yolov8x_merged_dataset_best.pt")
 single_tooth_model = SingleTooth(model_path)
 
 # image_path = "../photos/0.95_Lower_2023-08-24-10-05-05_Lower_jpg.jpg"
-# output_boxes_folder = "./results/cropped_boxes"
-# output_drawn_path = "./results/drawn_boxes.jpg"
+# output_boxes_folder = "./photos/cropped_boxes"
+# output_drawn_path = "./photos/drawn_boxes.jpg"
 #
 # image_array = image_to_numpy(image_path)
 # mouth_image = MouthImage(array=image_array, mouth_type="Lower")

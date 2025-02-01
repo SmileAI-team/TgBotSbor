@@ -52,7 +52,7 @@ class CutMouthModel:
         return True, cropped_array, mouth_type
 
 
-model_path = Path("./models/TEMP_VAR.pt")
+model_path = Path("neiro/models/TEMP_VAR.pt")
 cut_mouth_model = CutMouthModel(model_path)
 
 

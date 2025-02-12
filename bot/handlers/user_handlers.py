@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from io import BytesIO
-from aiogram.types import InputFile
+from aiogram.types import BufferedInputFile
 from aiogram import Router, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -200,8 +200,14 @@ async def finish_upload(message: types.Message, state: FSMContext):
         for photo_b64 in result_list:
             photo_bytes = base64.b64decode(photo_b64)
             # Создаем InputFile из байтов
-            photo_file = InputFile(BytesIO(photo_bytes), filename="processed_image.jpg")
-            await message.bot.send_photo(chat_id=message.chat.id, photo=photo_file)
+            photo_file = BufferedInputFile(
+                photo_bytes,
+                filename="processed_image.jpg"
+            )
+            await message.bot.send_photo(
+                chat_id=message.chat.id,
+                photo=photo_file
+            )
         await message.answer(f"Результаты обработки: {result_dict}")
     await state.clear()
     user_data.pop(user_id, None)

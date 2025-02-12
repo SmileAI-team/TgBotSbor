@@ -14,7 +14,6 @@ RABBITMQ_URL = getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq/")
 async def rpc_call(payload: dict, timeout: int = 30) -> dict:
     """
     Отправляет payload в очередь 'photo_processing' и ждёт ответа по RPC.
-
     :param payload: Словарь с данными (например, {"user_id": ..., "photos": [<b64>, ...]})
     :param timeout: Время ожидания ответа (секунд)
     :return: Ответ в виде словаря
@@ -34,16 +33,23 @@ async def rpc_call(payload: dict, timeout: int = 30) -> dict:
 
         await callback_queue.consume(on_response)
 
-        # Отправляем сообщение в очередь "photo_processing"
-        await channel.default_exchange.publish(
-            aio_pika.Message(
-                body=json.dumps(payload).encode(),
-                correlation_id=correlation_id,
-                reply_to=callback_queue.name,
-            ),
-            routing_key="photo_processing",
-        )
-
-        response = await asyncio.wait_for(future, timeout=timeout)
-        logger.info(f"Получен ответ по correlation_id={correlation_id}")
-        return json.loads(response)
+        try:
+            # Отправляем сообщение в очередь "photo_processing"
+            await channel.default_exchange.publish(
+                aio_pika.Message(
+                    body=json.dumps(payload).encode(),
+                    correlation_id=correlation_id,
+                    reply_to=callback_queue.name,
+                ),
+                routing_key="photo_processing",
+            )
+            # Ждём ответа
+            response = await asyncio.wait_for(future, timeout=timeout)
+            logger.info(f"Получен ответ по correlation_id={correlation_id}")
+            return json.loads(response)
+        except asyncio.TimeoutError:
+            logger.error("Timeout при ожидании ответа от RabbitMQ")
+            raise Exception("Timeout при ожидании ответа от RabbitMQ")
+        except Exception as e:
+            logger.error(f"Ошибка при взаимодействии с RabbitMQ: {e}")
+            raise

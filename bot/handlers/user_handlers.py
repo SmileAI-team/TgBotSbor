@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from io import BytesIO
+from aiogram.types import InputFile
 from aiogram import Router, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -171,9 +173,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
     if len(user_data[user_id]["photos"]) == 0:
         await message.answer("❌ Вы не отправили ни одной фотографии. Попробуйте снова.")
         return
-
     await message.answer("📡 Отправляю фото на обработку...")
-
     photos_base64 = []
     for file_id in user_data[user_id]["photos"]:
         file = await message.bot.get_file(file_id)
@@ -182,18 +182,15 @@ async def finish_upload(message: types.Message, state: FSMContext):
         # Преобразуем полученные байты в base64 (предполагается, что file_bytes_obj — BytesIO)
         b64_encoded = base64.b64encode(file_bytes_obj.getvalue()).decode("utf-8")
         photos_base64.append(b64_encoded)
-
     payload = {
         "user_id": user_id,
         "photos": photos_base64,
     }
-
     try:
         response = await rpc_call(payload)
     except Exception as e:
         await message.answer("❌ Ошибка связи с сервером обработки")
         return
-
     if response.get("error"):
         await message.answer(f"❌ Ошибка обработки: {response['error']}")
     else:
@@ -202,9 +199,10 @@ async def finish_upload(message: types.Message, state: FSMContext):
         await message.answer("✅ Фото обработаны, отправляю результат!")
         for photo_b64 in result_list:
             photo_bytes = base64.b64decode(photo_b64)
-            await message.bot.send_photo(chat_id=message.chat.id, photo=photo_bytes)
+            # Создаем InputFile из байтов
+            photo_file = InputFile(BytesIO(photo_bytes), filename="processed_image.jpg")
+            await message.bot.send_photo(chat_id=message.chat.id, photo=photo_file)
         await message.answer(f"Результаты обработки: {result_dict}")
-
     await state.clear()
     user_data.pop(user_id, None)
 

@@ -28,8 +28,7 @@ token.txt
 
 combine*
 123*
-Docker*
 token*
-neiro/models/
+neiro/models/*
 /photos/
 

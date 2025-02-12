@@ -5,11 +5,12 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
-from .config_data.config import Config, load_config
+from bot.config_data.config import Config, load_config
 # Импортируем роутеры
-from .handlers import user_handlers
+from bot.handlers.user_handlers import *
+from bot.handlers.user_handlers import router as user_handlers_router
 # Импортируем миддлвари
-from .middlewares.custom_logging import CustomLoggingMiddleware
+from bot.middlewares.custom_logging import CustomLoggingMiddleware
 # Импортируем вспомогательные функции для создания нужных объектов
 # ...
 #from keyboards.main_menu import set_main_menu
@@ -58,7 +59,7 @@ async def main():
 
     # Регистриуем роутеры
     logger.info('Подключаем роутеры')
-    dp.include_router(user_handlers.router)
+    dp.include_router(user_handlers_router)
 
     # Регистрируем миддлвари
     logger.info('Подключаем миддлвари')

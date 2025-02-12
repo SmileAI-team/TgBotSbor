@@ -5,6 +5,8 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from ..keyboards.user_keyboards import *
+from ..queue.rabbitmq_client import rpc_call
+import base64
 
 # Инициализация логгера
 logger = logging.getLogger(__name__)
@@ -12,8 +14,8 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-
 router = Router()
+
 user_data = {}
 
 
@@ -164,13 +166,47 @@ async def process_photo(message: types.Message, state: FSMContext):
 
 @router.message(UploadStates.waiting_for_photos, F.text == "✅ Готово")
 async def finish_upload(message: types.Message, state: FSMContext):
-    """Завершение загрузки фото"""
+    """Завершение загрузки фото с отправкой на обработку"""
     user_id = message.from_user.id
-    if len(user_data[user_id]["photos"]) > 0:
-        await message.answer("✅ Загрузка завершена! Спасибо!", reply_markup=main_keyboard)
-        await state.clear()
-    else:
+    if len(user_data[user_id]["photos"]) == 0:
         await message.answer("❌ Вы не отправили ни одной фотографии. Попробуйте снова.")
+        return
+
+    await message.answer("📡 Отправляю фото на обработку...")
+
+    photos_base64 = []
+    for file_id in user_data[user_id]["photos"]:
+        file = await message.bot.get_file(file_id)
+        file_path = file.file_path
+        file_bytes_obj = await message.bot.download_file(file_path)
+        # Преобразуем полученные байты в base64 (предполагается, что file_bytes_obj — BytesIO)
+        b64_encoded = base64.b64encode(file_bytes_obj.getvalue()).decode("utf-8")
+        photos_base64.append(b64_encoded)
+
+    payload = {
+        "user_id": user_id,
+        "photos": photos_base64,
+    }
+
+    try:
+        response = await rpc_call(payload)
+    except Exception as e:
+        await message.answer("❌ Ошибка связи с сервером обработки")
+        return
+
+    if response.get("error"):
+        await message.answer(f"❌ Ошибка обработки: {response['error']}")
+    else:
+        result_list = response.get("result_list", [])
+        result_dict = response.get("result_dict", {})
+        await message.answer("✅ Фото обработаны, отправляю результат!")
+        for photo_b64 in result_list:
+            photo_bytes = base64.b64decode(photo_b64)
+            await message.bot.send_photo(chat_id=message.chat.id, photo=photo_bytes)
+        await message.answer(f"Результаты обработки: {result_dict}")
+
+    await state.clear()
+    user_data.pop(user_id, None)
 
 
 @router.message(UploadStates.waiting_for_photos, F.text == "❌ Отмена")

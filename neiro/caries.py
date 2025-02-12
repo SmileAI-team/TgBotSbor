@@ -70,6 +70,6 @@ class Caries:
 model_path = Path("neiro/models/kaif_caries.pt")
 caries_model = Caries(model_path)
 
-# img = image_to_numpy("./photos/cropped_boxes/box_10.jpg")
+# img = image_to_numpy("D:\\PycharmProjects\\TgBotSbor\\photos\\results_pipe_1.jpg")
 #
 # print(caries_model.analyze_array(img))

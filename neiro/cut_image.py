@@ -17,7 +17,7 @@ class CutMouthModel:
         self.names = self.model.names
         print(f"Model loaded with classes: {self.names}")
 
-    def analyze(self, image_array: np.ndarray, confidence_threshold: float = 0.6) -> Tuple[
+    def analyze(self, image_array: np.ndarray, confidence_threshold: float = 0.4) -> Tuple[
         bool, Union[np.ndarray, None], Union[str, None]]:
 
         mouth_types = {0: 'Front view', 1: 'Lower Jaw', 2: 'Upper Jaw'}

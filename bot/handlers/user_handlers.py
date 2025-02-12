@@ -161,7 +161,8 @@ async def process_photo(message: types.Message, state: FSMContext):
 
     if len(user_data[user_id]["photos"]) >= 3:
         await message.answer("✅ Фото получены! Спасибо!", reply_markup=main_keyboard)
-        await state.clear()
+        await finish_upload(message, state)
+        #await state.clear()
     else:
         await message.answer(f"✅ Фото {len(user_data[user_id]['photos'])}/3 принято!")
 
@@ -192,11 +193,11 @@ async def finish_upload(message: types.Message, state: FSMContext):
         await message.answer("❌ Ошибка связи с сервером обработки")
         return
     if response.get("error"):
-        await message.answer(f"❌ Ошибка обработки: {response['error']}")
+        await message.answer(f"❌ Ошибка обработки: {response['error']}", reply_markup=main_keyboard)
     else:
         result_list = response.get("result_list", [])
         result_dict = response.get("result_dict", {})
-        await message.answer("✅ Фото обработаны, отправляю результат!")
+        await message.answer("✅ Фото обработаны, отправляю результат!", reply_markup=main_keyboard)
         for photo_b64 in result_list:
             photo_bytes = base64.b64decode(photo_b64)
             # Создаем InputFile из байтов
@@ -208,7 +209,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
                 chat_id=message.chat.id,
                 photo=photo_file
             )
-        await message.answer(f"Результаты обработки: {result_dict}")
+        await message.answer(f"Результаты обработки: {result_dict}", reply_markup=main_keyboard)
     await state.clear()
     user_data.pop(user_id, None)
 

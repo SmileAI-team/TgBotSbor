@@ -17,7 +17,7 @@ class SingleTooth:
         self.names = self.model.names
         print(f"Model loaded with classes: {self.names}")
 
-    def analyze(self, mouth_image: MouthImage, conf_threshold: float = 0.5) -> None:
+    def analyze(self, mouth_image: MouthImage, conf_threshold: float = 0.2) -> None:
         """
         Анализирует изображение из экземпляра MouthImage, добавляет боксы в поле boxes.
 

@@ -42,29 +42,33 @@ class Caries:
                 )
                 mouth_image.caries_coord.append(caries_tooth)
 
-
-    def analyze_array(self, image_array: np.ndarray) -> int:
+    def analyze_array(self, image_array: np.ndarray, confidence_threshold: float = 0.6) -> int:
         """
         Анализирует входной массив изображения и возвращает однозначный класс (0, 1, 2).
 
         Args:
             image_array (np.ndarray): Массив изображения.
+            confidence_threshold (float): Порог уверенности (по умолчанию 0.6).
 
         Returns:
             int: Класс (0, 1, 2), соответствующий предсказанию модели.
         """
         results = self.model(image_array, save=False)
 
-        # Проверяем, есть ли боксы в результатах
         if len(results[0].boxes) == 0:
             return -1
 
-        # Извлекаем первый бокс (или используем максимальное значение уверенности)
-        box = max(results[0].boxes, key=lambda b: b.conf.cpu().item())
+        # Фильтрация по confidence_threshold
+        valid_boxes = [
+            box for box in results[0].boxes
+            if box.conf.cpu().item() >= confidence_threshold
+        ]
 
-        # Получаем класс из предсказания
-        predicted_class = int(box.cls.cpu().item())
-        return predicted_class
+        if not valid_boxes:
+            return 2  # Нет предсказаний выше порога -> здоровый зуб
+
+        best_box = max(valid_boxes, key=lambda b: b.conf.cpu().item())
+        return int(best_box.cls.cpu().item())
 
 
 model_path = Path("neiro/models/kaif_caries.pt")

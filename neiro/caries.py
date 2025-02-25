@@ -42,7 +42,7 @@ class Caries:
                 )
                 mouth_image.caries_coord.append(caries_tooth)
 
-    def analyze_array(self, image_array: np.ndarray, confidence_threshold: float = 0.6) -> int:
+    def analyze_array(self, image_array: np.ndarray, confidence_threshold: float = 0.8) -> int:
         """
         Анализирует входной массив изображения и возвращает однозначный класс (0, 1, 2).
 

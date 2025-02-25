@@ -59,20 +59,12 @@ cut_mouth_model = CutMouthModel(model_path)
 def cut_images(list_images: List):
     datacls_list = []
     error = None
-    exit_code = True
 
     for index, arr_img in enumerate(list_images):
         exit_code, result_array, mouth_type = cut_mouth_model.analyze(arr_img)
 
         if not exit_code:
-            error = f"Фото {index + 1} не верно"
-            return False, error, None
-
-        if datacls_list:
-            for datacls in datacls_list:
-                if datacls.mouth_type == mouth_type:
-                    error = f"Фотографии одного типа: {mouth_type}"
-                    return False, error, None
+            mouth_type = 'Nah'
 
         image = MouthImage(
             array=result_array,
@@ -82,4 +74,4 @@ def cut_images(list_images: List):
 
         datacls_list.append(image)
 
-    return exit_code, error, datacls_list
+    return datacls_list

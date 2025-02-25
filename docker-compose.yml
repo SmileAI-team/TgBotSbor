@@ -32,3 +32,4 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
     depends_on:
       - rabbitmq
+    restart: unless-stopped

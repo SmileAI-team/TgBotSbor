@@ -18,6 +18,11 @@ async def rpc_call(payload: dict, timeout: int = 30) -> dict:
     :param timeout: Время ожидания ответа (секунд)
     :return: Ответ в виде словаря
     """
+    if "photos" not in payload or not isinstance(payload["photos"], list):
+        raise ValueError("Некорректный формат payload")
+
+    logger.info(f"Отправка {len(payload['photos'])} фото, пример данных: {payload['photos'][0][:50]}...")
+
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     async with connection:
         channel = await connection.channel()

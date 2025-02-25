@@ -48,7 +48,7 @@ async def start(message: types.Message, state: FSMContext):
     )
 
     # Сообщение с согласием и ссылкой
-    privacy_policy_link = "<a href='https://example.com/privacy'>Политикой конфиденциальности</a>"
+    privacy_policy_link = "<a href='https://docs.google.com/document/d/1vBwBFJbYjn_jLhNvjALf_auXysNFzPmdh0mE6XV0_YI/edit?usp=sharing'>Пользовательским соглашением</a>"
     await message.answer(
         f"Для использования нашего сервиса требуется ваше согласие на обработку "
         f"персональных данных, включая фотографии полости рта. Эти данные будут "
@@ -84,7 +84,7 @@ async def consent_no(call: types.CallbackQuery, state: FSMContext):
     # Сообщение об отказе
     await call.message.answer(
         "❌ Без согласия использование бота невозможно. "
-        "Если вы передумаете, нажмите /start, чтобы снова ознакомиться с Политикой конфиденциальности.",
+        "Если вы передумаете, нажмите /start, чтобы снова ознакомиться с Пользовательским соглашением.",
         reply_markup=types.ReplyKeyboardRemove()  # Убираем все клавиатуры
     )
     await state.clear()
@@ -169,47 +169,74 @@ async def process_photo(message: types.Message, state: FSMContext):
 
 @router.message(UploadStates.waiting_for_photos, F.text == "✅ Готово")
 async def finish_upload(message: types.Message, state: FSMContext):
-    """Завершение загрузки фото с отправкой на обработку"""
     user_id = message.from_user.id
-    if len(user_data[user_id]["photos"]) == 0:
-        await message.answer("❌ Вы не отправили ни одной фотографии. Попробуйте снова.")
+    if not user_data.get(user_id) or len(user_data[user_id]["photos"]) == 0:
+        await message.answer("❌ Нет фото для обработки", reply_markup=main_keyboard)
         return
+
     await message.answer("📡 Отправляю фото на обработку...")
+
+    # Скачиваем и конвертируем фото
     photos_base64 = []
     for file_id in user_data[user_id]["photos"]:
-        file = await message.bot.get_file(file_id)
-        file_path = file.file_path
-        file_bytes_obj = await message.bot.download_file(file_path)
-        # Преобразуем полученные байты в base64 (предполагается, что file_bytes_obj — BytesIO)
-        b64_encoded = base64.b64encode(file_bytes_obj.getvalue()).decode("utf-8")
-        photos_base64.append(b64_encoded)
+        try:
+            # Получаем файл из Telegram
+            file = await message.bot.get_file(file_id)
+            if not file.file_path:
+                logger.error(f"Не удалось получить путь к файлу {file_id}")
+                continue
+
+            # Скачиваем содержимое
+            file_data = await message.bot.download_file(file.file_path)
+
+            # Конвертируем в base64
+            encoded = base64.b64encode(file_data.read()).decode('utf-8')
+            logger.info(f"Закодировано фото {file_id}, длина: {len(encoded)}")
+
+            photos_base64.append(encoded)
+        except Exception as e:
+            logger.error(f"Ошибка обработки фото: {str(e)}")
+            continue
+
+    # Формируем payload с base64
     payload = {
         "user_id": user_id,
-        "photos": photos_base64,
+        "photos": photos_base64
     }
+
     try:
         response = await rpc_call(payload)
     except Exception as e:
-        await message.answer("❌ Ошибка связи с сервером обработки")
+        logger.error(f"RPC ошибка: {str(e)}")
+        await message.answer("❌ Ошибка обработки", reply_markup=main_keyboard)
         return
-    if response.get("error"):
-        await message.answer(f"❌ Ошибка обработки: {response['error']}", reply_markup=main_keyboard)
-    else:
-        result_list = response.get("result_list", [])
-        result_dict = response.get("result_dict", {})
-        await message.answer("✅ Фото обработаны, отправляю результат!", reply_markup=main_keyboard)
-        for photo_b64 in result_list:
-            photo_bytes = base64.b64decode(photo_b64)
-            # Создаем InputFile из байтов
-            photo_file = BufferedInputFile(
-                photo_bytes,
-                filename="processed_image.jpg"
-            )
-            await message.bot.send_photo(
-                chat_id=message.chat.id,
-                photo=photo_file
-            )
-        await message.answer(f"Результаты обработки: {result_dict}", reply_markup=main_keyboard)
+
+    mouth_type = response.get("mouth_type", [])
+    result_list = response.get("result_list", [])
+
+    # Преобразуем mouth_type в русский текст
+    type_mapping = {
+        "Front view": "Передние зубы",
+        "Upper Jaw": "Верхняя челюсть",
+        "Lower Jaw": "Нижняя челюсть"
+    }
+    ru_type = [type_mapping.get(item, "Неизвестный тип") for item in mouth_type]
+
+    await message.answer(f"🦷 {ru_type}:")
+
+    # Отправляем обработанные фото
+    for photo_b64 in result_list:
+        photo_bytes = base64.b64decode(photo_b64, validate=True)
+        photo_file = BufferedInputFile(photo_bytes, filename="processed.jpg")
+        await message.bot.send_photo(message.chat.id, photo_file)
+
+    await message.answer(
+        "Результаты обработки:\n"
+        "🔴 Красный квадрат: Обнаружен кариес\n"
+        "🔵 Синий квадрат: Подозрение на кариес",
+        reply_markup=main_keyboard
+    )
+
     await state.clear()
     user_data.pop(user_id, None)
 

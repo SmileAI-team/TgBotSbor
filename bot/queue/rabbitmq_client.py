@@ -8,10 +8,10 @@ from os import getenv
 logger = logging.getLogger(__name__)
 
 # Получаем URL RabbitMQ из переменных окружения или используем значение по умолчанию
-RABBITMQ_URL = getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq/")
+RABBITMQ_URL = getenv("RABBITMQ_URL", "amqp://admin:admin@rabbitmq:5672/")
 
 
-async def rpc_call(payload: dict, timeout: int = 30) -> dict:
+async def rpc_call(payload: dict, timeout: int = 60) -> dict:
     """
     Отправляет payload в очередь 'photo_processing' и ждёт ответа по RPC.
     :param payload: Словарь с данными (например, {"user_id": ..., "photos": [<b64>, ...]})
@@ -58,3 +58,21 @@ async def rpc_call(payload: dict, timeout: int = 30) -> dict:
         except Exception as e:
             logger.error(f"Ошибка при взаимодействии с RabbitMQ: {e}")
             raise
+
+
+async def send_to_save(payload: dict):
+    """
+    Отправляет фото для сохранения в модуль save
+    :param payload: {"user_id": int, "photos": [{"content": b64, "type": "original/processed"}]}
+    """
+    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    async with connection:
+        channel = await connection.channel()
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=json.dumps(payload).encode(),
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+            ),
+            routing_key="save_photos"
+        )
+    logger.info(f"Sent {len(payload['photos'])} photos to save")

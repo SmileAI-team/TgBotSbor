@@ -8,8 +8,16 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_VHOST: /
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - app-net
 
   bot:
     build:
@@ -19,9 +27,12 @@ services:
     env_file:
       - bot/config_data/.env
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672/
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-net
 
   neiro:
     build:
@@ -29,7 +40,29 @@ services:
       dockerfile: neiro/Dockerfile
     container_name: neiro_module
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672/
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - app-net
+
+  save:
+    build:
+      context: .
+      dockerfile: save/Dockerfile
+    container_name: save_module
+    environment:
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672/
+    volumes:
+      - ./save/smile-ai-bot-1dccd401d6ed.json:/app/save/smile-ai-bot-1dccd401d6ed.json
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge

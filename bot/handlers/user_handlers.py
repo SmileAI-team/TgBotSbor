@@ -7,7 +7,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from ..keyboards.user_keyboards import *
-from ..queue.rabbitmq_client import rpc_call
+from ..queue.rabbitmq_client import rpc_call, send_to_save
 import base64
 
 # Инициализация логгера
@@ -203,7 +203,10 @@ async def finish_upload(message: types.Message, state: FSMContext):
         "user_id": user_id,
         "photos": photos_base64
     }
-
+    try:
+        await send_to_save(payload)
+    except Exception as e:
+        logger.error(f"send_to_save ошибка: {str(e)}")
     try:
         response = await rpc_call(payload)
     except Exception as e:

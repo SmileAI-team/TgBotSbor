@@ -12,7 +12,7 @@ from .pipe import pipeline_caries
 
 logger = logging.getLogger(__name__)
 
-RABBITMQ_URL = getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq/")
+RABBITMQ_URL = getenv("RABBITMQ_URL", "amqp://admin:admin@rabbitmq:5672/")
 
 
 def decode_image_from_b64(image_b64: str) -> np.ndarray:

@@ -220,9 +220,12 @@ async def finish_upload(message: types.Message, state: FSMContext):
         "Upper Jaw": "Верхняя челюсть",
         "Lower Jaw": "Нижняя челюсть"
     }
-    ru_type = [type_mapping.get(item, "Неизвестный тип") for item in mouth_type]
+    ru_type = [type_mapping.get(item, "Не распознано") for item in mouth_type]
 
-    await message.answer(f"🦷 {ru_type}:")
+    formatted_text = "🦷Результаты анализа зубов:\n" + "\n".join(
+        f"📸 Фото {i + 1}: <b>{item}</b>" for i, item in enumerate(ru_type)
+    )
+    await message.answer(formatted_text, parse_mode="HTML")
 
     # Отправляем обработанные фото
     for photo_b64 in result_list:

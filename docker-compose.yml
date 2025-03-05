@@ -1,6 +1,26 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_DB: dental_db
+      POSTGRES_USER: dental_user
+      POSTGRES_PASSWORD: dental_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dental_user -d dental_db"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -55,13 +75,19 @@ services:
     container_name: save_module
     environment:
       - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672/
+      - DB_URL=postgresql://dental_user:dental_pass@postgres:5432/dental_db
     volumes:
       - ./save/smile-ai-bot-1dccd401d6ed.json:/app/save/smile-ai-bot-1dccd401d6ed.json
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - app-net
+
+volumes:
+  postgres_data:
 
 networks:
   app-net:

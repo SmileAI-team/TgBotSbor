@@ -11,6 +11,8 @@ from bot.handlers.user_handlers import *
 from bot.handlers.user_handlers import router as user_handlers_router
 # Импортируем миддлвари
 from bot.middlewares.custom_logging import CustomLoggingMiddleware
+# Импортируем логирование
+from .handlers.logging_utils import start_log_scheduler
 # Импортируем вспомогательные функции для создания нужных объектов
 # ...
 #from keyboards.main_menu import set_main_menu
@@ -53,7 +55,8 @@ async def main():
 
     # Помещаем нужные объекты в workflow_data диспетчера
     # dp.workflow_data.update(...)
-
+    logger.info('Подключаем логирование')
+    await start_log_scheduler()
     # Настраиваем главное меню бота
     #await set_main_menu(bot)
 

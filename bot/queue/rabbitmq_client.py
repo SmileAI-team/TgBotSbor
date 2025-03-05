@@ -76,3 +76,22 @@ async def send_to_save(payload: dict):
             routing_key="save_photos"
         )
     logger.info(f"Sent {len(payload['photos'])} photos to save")
+
+
+async def send_logs_batch(logs_batch: list):
+    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    async with connection:
+        channel = await connection.channel()
+        await channel.declare_queue("logs_queue", durable=True)
+
+        # Конвертируем datetime в строку
+        for log in logs_batch:
+            log["time"] = log["time"].isoformat()
+
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=json.dumps(logs_batch).encode(),
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+            ),
+            routing_key="logs_queue"
+        )

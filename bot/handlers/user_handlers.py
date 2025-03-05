@@ -8,6 +8,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from ..keyboards.user_keyboards import *
 from ..queue.rabbitmq_client import rpc_call, send_to_save
+from .logging_utils import log_event, start_log_scheduler
+from datetime import datetime
 import base64
 
 # Инициализация логгера
@@ -17,6 +19,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 router = Router()
+
 
 user_data = {}
 
@@ -37,7 +40,9 @@ class FeedbackStates(StatesGroup):
 @router.message(CommandStart())
 async def start(message: types.Message, state: FSMContext):
     """Обработчик старта бота с приветствием и запросом согласия"""
-    logger.info(f"User {message.from_user.id} started bot")
+    user_id = message.from_user.id
+    await log_event("user_info", "User started bot", user_id)
+    logger.info(f"User {user_id} gave consent")
 
     # Приветственное сообщение
     await message.answer(
@@ -63,6 +68,7 @@ async def start(message: types.Message, state: FSMContext):
 @router.callback_query(ConsentStates.waiting_for_consent, F.data == "consent_yes")
 async def consent_yes(call: types.CallbackQuery, state: FSMContext):
     """Обработка согласия с показом инструкции"""
+    await log_event("user_action", "User gave consent", call.from_user.id)
     logger.info(f"User {call.from_user.id} gave consent")
     await call.message.edit_reply_markup()  # Убираем кнопки согласия
 
@@ -78,6 +84,7 @@ async def consent_yes(call: types.CallbackQuery, state: FSMContext):
 @router.callback_query(ConsentStates.waiting_for_consent, F.data == "consent_no")
 async def consent_no(call: types.CallbackQuery, state: FSMContext):
     """Обработка отказа"""
+    await log_event("user_action", "User declined consent", call.from_user.id)
     logger.info(f"User {call.from_user.id} declined consent")
     await call.message.edit_reply_markup()  # Убираем кнопки согласия
 
@@ -110,6 +117,7 @@ async def show_instructions(message: types.Message):
 @router.message(F.text == "ℹ️ Инструкция")
 async def show_instructions_command(message: types.Message):
     """Показ инструкции по запросу"""
+    await log_event("user_action", "User requested instructions", message.from_user.id)
     logger.info(f"User {message.from_user.id} requested instructions")
     await show_instructions(message)
 
@@ -117,6 +125,7 @@ async def show_instructions_command(message: types.Message):
 @router.callback_query(ConsentStates.waiting_for_consent, F.data == "consent_no")
 async def consent_no(call: types.CallbackQuery, state: FSMContext):
     """Обработка отказа"""
+    await log_event("user_action", "User declined consent", call.from_user.id)
     logger.info(f"User {call.from_user.id} declined consent")
     await call.message.edit_reply_markup()
     await call.message.answer("❌ Без согласия использование бота невозможно")
@@ -128,6 +137,7 @@ async def consent_no(call: types.CallbackQuery, state: FSMContext):
 @router.message(Command("feedback"))
 async def feedback_command(message: types.Message, state: FSMContext):
     """Запрос обратной связи"""
+    await log_event("user_action", "User requested feedback", message.from_user.id)
     logger.info(f"User {message.from_user.id} requested feedback")
     await message.answer("Напишите ваш отзыв или предложение:", reply_markup=cancel_keyboard)
     await state.set_state(FeedbackStates.waiting_for_feedback)
@@ -136,6 +146,7 @@ async def feedback_command(message: types.Message, state: FSMContext):
 @router.message(FeedbackStates.waiting_for_feedback)
 async def process_feedback(message: types.Message, state: FSMContext):
     """Обработка полученного фидбека"""
+    await log_event("feedback", message.text, message.from_user.id)
     logger.info(f"Feedback from {message.from_user.id}: {message.text}")
     await message.answer("✅ Спасибо за ваш отзыв!", reply_markup=main_keyboard)
     await state.clear()
@@ -145,6 +156,7 @@ async def process_feedback(message: types.Message, state: FSMContext):
 @router.message(F.text == "📷 Загрузить фото")
 async def start_upload(message: types.Message, state: FSMContext):
     """Начало загрузки фото"""
+    await log_event("user_action", "User started photo upload", message.from_user.id)
     logger.info(f"User {message.from_user.id} started photo upload")
     user_data[message.from_user.id] = {"photos": []}
     await message.answer("Отправьте до 3 фотографий зубов:", reply_markup=upload_keyboard)
@@ -157,6 +169,7 @@ async def process_photo(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     user_data[user_id]["photos"].append(message.photo[-1].file_id)
 
+    await log_event("user_action", f"User {user_id} uploaded photo {len(user_data[user_id]['photos'])}", user_id)
     logger.info(f"User {user_id} uploaded photo {len(user_data[user_id]['photos'])}")
 
     if len(user_data[user_id]["photos"]) >= 3:
@@ -183,6 +196,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
             # Получаем файл из Telegram
             file = await message.bot.get_file(file_id)
             if not file.file_path:
+                await log_event("error", f"Не удалось получить путь к файлу {file_id}")
                 logger.error(f"Не удалось получить путь к файлу {file_id}")
                 continue
 
@@ -195,6 +209,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
 
             photos_base64.append(encoded)
         except Exception as e:
+            await log_event("error", f"Ошибка обработки фото: {str(e)}")
             logger.error(f"Ошибка обработки фото: {str(e)}")
             continue
 
@@ -206,10 +221,12 @@ async def finish_upload(message: types.Message, state: FSMContext):
     try:
         await send_to_save(payload)
     except Exception as e:
+        await log_event("error", f"send_to_save ошибка: {str(e)}")
         logger.error(f"send_to_save ошибка: {str(e)}")
     try:
         response = await rpc_call(payload)
     except Exception as e:
+        await log_event("error", f"RPC ошибка: {str(e)}")
         logger.error(f"RPC ошибка: {str(e)}")
         await message.answer("❌ Ошибка обработки", reply_markup=main_keyboard)
         return
@@ -250,6 +267,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
 @router.message(UploadStates.waiting_for_photos, F.text == "❌ Отмена")
 async def cancel_upload(message: types.Message, state: FSMContext):
     """Отмена загрузки фото"""
+    await log_event("user_action", "User canceled upload", message.from_user.id)
     logger.info(f"User {message.from_user.id} canceled upload")
     await message.answer("Загрузка отменена", reply_markup=main_keyboard)
     await state.clear()

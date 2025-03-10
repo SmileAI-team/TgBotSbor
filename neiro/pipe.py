@@ -44,10 +44,10 @@ def pipeline_caries(list_images: List[np.ndarray]):
             for caries in datacls.caries_coord:
                 x_min, y_min, x_max, y_max = caries.caries_coord
                 if caries.caries_type == 0:
-                    color = "red"
+                    color = (0, 0, 255)
                     caries_count["type_0"] += 1
                 elif caries.caries_type == 1:
-                    color = "blue"
+                    color = (255, 0, 0)
                     caries_count["type_1"] += 1
                 else:
                     continue

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 RABBITMQ_URL = getenv("RABBITMQ_URL", "amqp://admin:admin@rabbitmq:5672/")
 
 
-async def rpc_call(payload: dict, timeout: int = 60) -> dict:
+async def rpc_call(payload: dict, timeout: int = 180) -> dict:
     """
     Отправляет payload в очередь 'photo_processing' и ждёт ответа по RPC.
     :param payload: Словарь с данными (например, {"user_id": ..., "photos": [<b64>, ...]})

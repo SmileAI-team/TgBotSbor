@@ -35,9 +35,18 @@ cancel_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+
 upload_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="❌ Отмена"), KeyboardButton(text="✅ Готово")]
     ],
     resize_keyboard=True
+)
+
+
+feedback_request_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="⭐ Оставить отзыв", callback_data="ask_feedback")],
+        [InlineKeyboardButton(text="🚫 Пропустить", callback_data="skip_feedback")]
+    ]
 )

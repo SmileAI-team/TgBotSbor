@@ -24,16 +24,13 @@ router = Router()
 user_data = {}
 
 
-class ConsentStates(StatesGroup):
-    waiting_for_consent = State()
-
-
 class UploadStates(StatesGroup):
     waiting_for_photos = State()
 
 
 class FeedbackStates(StatesGroup):
     waiting_for_feedback = State()
+    waiting_for_choice = State()
 
 
 # --------------------- Базовые обработчики ---------------------
@@ -47,53 +44,34 @@ async def start(message: types.Message, state: FSMContext):
     # Приветственное сообщение
     await message.answer(
         "Добро пожаловать! Этот бот поможет провести диагностику состояния зубов "
-        "с использованием фотографий и искусственного интеллекта. Вы получите "
-        "предварительные рекомендации по уходу за зубами, но это не заменяет "
-        "визит к стоматологу 🦷"
+        "с использованием фотографий и искусственного интеллекта 🦷"
     )
 
-    # Сообщение с согласием и ссылкой
     privacy_policy_link = "<a href='https://docs.google.com/document/d/1vBwBFJbYjn_jLhNvjALf_auXysNFzPmdh0mE6XV0_YI/edit?usp=sharing'>Пользовательским соглашением</a>"
     await message.answer(
-        f"Для использования нашего сервиса требуется ваше согласие на обработку "
-        f"персональных данных, включая фотографии полости рта. Эти данные будут "
-        f"использоваться только для диагностики и предоставления рекомендаций. "
+        f"Используя этого бота, вы автоматически соглашаетесь "
+        f"на обработку ваших персональных данных, включая фотографии полости рта, "
+        f"для целей диагностики и предоставления рекомендаций."
         f"Вы можете ознакомиться с {privacy_policy_link}.",
         parse_mode="HTML",
-        reply_markup=consent_keyboard  # Показываем только кнопки согласия
     )
-    await state.set_state(ConsentStates.waiting_for_consent)
-
-
-@router.callback_query(ConsentStates.waiting_for_consent, F.data == "consent_yes")
-async def consent_yes(call: types.CallbackQuery, state: FSMContext):
-    """Обработка согласия с показом инструкции"""
-    await log_event("user_action", "User gave consent", call.from_user.id)
-    logger.info(f"User {call.from_user.id} gave consent")
-    await call.message.edit_reply_markup()  # Убираем кнопки согласия
-
-    # Сообщение о том, что можно ознакомиться с инструкцией
-    await call.message.answer("✅ Отлично! Теперь вы можете ознакомиться с инструкцией:", reply_markup=main_keyboard)
-
-    # Отправка инструкции
-    await show_instructions(call.message)
-
+    await asyncio.sleep(2)
+    await show_instructions(message)
     await state.clear()
 
 
-@router.callback_query(ConsentStates.waiting_for_consent, F.data == "consent_no")
-async def consent_no(call: types.CallbackQuery, state: FSMContext):
-    """Обработка отказа"""
-    await log_event("user_action", "User declined consent", call.from_user.id)
-    logger.info(f"User {call.from_user.id} declined consent")
-    await call.message.edit_reply_markup()  # Убираем кнопки согласия
+@router.callback_query(FeedbackStates.waiting_for_choice, F.data == "ask_feedback")
+async def ask_feedback(call: types.CallbackQuery, state: FSMContext):
+    await call.message.edit_reply_markup()  # Убираем кнопки
+    await call.message.answer("Напишите ваш отзыв или предложение:", reply_markup=cancel_keyboard)
+    await state.set_state(FeedbackStates.waiting_for_feedback)
 
-    # Сообщение об отказе
-    await call.message.answer(
-        "❌ Без согласия использование бота невозможно. "
-        "Если вы передумаете, нажмите /start, чтобы снова ознакомиться с Пользовательским соглашением.",
-        reply_markup=types.ReplyKeyboardRemove()  # Убираем все клавиатуры
-    )
+
+@router.callback_query(FeedbackStates.waiting_for_choice, F.data == "skip_feedback")
+async def skip_feedback(call: types.CallbackQuery, state: FSMContext):
+    await log_event("feedback", "User skipped feedback", call.from_user.id)
+    await call.message.edit_reply_markup()  # Убираем кнопки
+    await call.message.answer("Спасибо за использование нашего сервиса!", reply_markup=main_keyboard)
     await state.clear()
 
 
@@ -121,15 +99,6 @@ async def show_instructions_command(message: types.Message):
     logger.info(f"User {message.from_user.id} requested instructions")
     await show_instructions(message)
 
-
-@router.callback_query(ConsentStates.waiting_for_consent, F.data == "consent_no")
-async def consent_no(call: types.CallbackQuery, state: FSMContext):
-    """Обработка отказа"""
-    await log_event("user_action", "User declined consent", call.from_user.id)
-    logger.info(f"User {call.from_user.id} declined consent")
-    await call.message.edit_reply_markup()
-    await call.message.answer("❌ Без согласия использование бота невозможно")
-    await state.clear()
 
 
 # --------------------- Система обратной связи ---------------------
@@ -262,6 +231,14 @@ async def finish_upload(message: types.Message, state: FSMContext):
 
     await state.clear()
     user_data.pop(user_id, None)
+
+    await asyncio.sleep(2)
+    await message.answer(
+        "Понравился ли вам результат анализа?\n"
+        "Мы будем благодарны за ваш отзыв!",
+        reply_markup=feedback_request_keyboard
+    )
+    await state.set_state(FeedbackStates.waiting_for_choice)
 
 
 @router.message(UploadStates.waiting_for_photos, F.text == "❌ Отмена")

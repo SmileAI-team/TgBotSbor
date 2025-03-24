@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from io import BytesIO
-from aiogram.types import BufferedInputFile
+from aiogram.types import BufferedInputFile, InputMediaVideo, FSInputFile
 from aiogram import Router, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -53,7 +53,8 @@ async def start(message: types.Message, state: FSMContext):
         f"на обработку ваших персональных данных, включая фотографии полости рта, "
         f"для целей диагностики и предоставления рекомендаций."
         f"Вы можете ознакомиться с {privacy_policy_link}.",
-        parse_mode="HTML",
+        # parse_mode="HTML",
+        disable_web_page_preview=True
     )
     await asyncio.sleep(2)
     await show_instructions(message)
@@ -78,17 +79,27 @@ async def skip_feedback(call: types.CallbackQuery, state: FSMContext):
 async def show_instructions(message: types.Message):
     """Функция показа инструкции с фото"""
     instructions = (
-        "Перед тем как сделать фото, пожалуйста, следуйте этим советам:\n"
-        "1. Найдите хорошо освещенное место.\n"
-        "2. Используйте вспышку, если это необходимо.\n"
-        "3. Протрите камеру, чтобы избежать размытых изображений."
+        "Подготовка перед съемкой\n"
+        "✅ Убедитесь, что вы находитесь в ярко освещённом месте.\n"
+        "✅ Включите вспышку на телефоне, чтобы AI мог правильно распознать детали.\n"
+        "✅ Используйте фронтальную камеру (селфи-камера) для всех фото."
     )
 
     # Путь к примеру фотографии (заглушка)
     example_photo_path = "bot/handlers/photo_2024-04-19_17-40-12.jpg"
-
+    # Инструкция в форме фото
     await message.answer(instructions)
-    await message.answer_photo(types.FSInputFile(example_photo_path))
+    # await message.answer_photo(types.FSInputFile(example_photo_path))
+    # Инструкция в формате видео
+    media = [
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1434.MOV"), caption="Включите вспышку", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1436.MOV"), caption="фронтальная проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1438.MOV"), caption="Нижняя проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1440.MOV"), caption="Верхня Проекция", width=448, height=848),
+    ]
+
+    await message.answer_media_group(media=media)
+
 
 
 # Добавляем команду для инструкции в главное меню

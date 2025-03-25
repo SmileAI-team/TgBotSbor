@@ -40,8 +40,8 @@ class GoogleDriveClient:
 
         except Exception as e:
             logger.critical(f"Connection failed: {str(e)}")
-            self.session = None
-            raise
+            if self.session:
+                await self.close()  # Закрываем сессию в случае ошибки
 
     async def create_folder_structure(self, user_id: str) -> str:
         """Создание структуры папок"""

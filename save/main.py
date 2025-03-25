@@ -46,12 +46,14 @@ async def main():
     except Exception as e:
         logger.critical(f"Critical error: {str(e)}")
     finally:
-        await drive_client.close()
-        log_consumer_task.cancel()
-        try:
-            await log_consumer_task
-        except asyncio.CancelledError:
-            pass
+        if drive_client:
+            await drive_client.close()
+        if log_consumer_task:
+            log_consumer_task.cancel()
+            try:
+                await log_consumer_task
+            except asyncio.CancelledError:
+                pass
 
 
 if __name__ == "__main__":

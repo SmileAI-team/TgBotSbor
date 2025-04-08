@@ -2,6 +2,7 @@ import asyncio
 import logging
 from io import BytesIO
 from aiogram.types import BufferedInputFile, InputMediaVideo, FSInputFile
+from aiogram.types import BufferedInputFile, InputMediaVideo, FSInputFile
 from aiogram import Router, types, F
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -44,8 +45,7 @@ async def start(message: types.Message, state: FSMContext):
     # Приветственное сообщение
     await message.answer(
         "Добро пожаловать! Этот бот поможет провести диагностику состояния зубов "
-        "с использованием фотографий и искусственного интеллекта 🦷", reply_markup=main_keyboard
-
+        "с использованием фотографий и искусственного интеллекта 🦷"
     )
 
     privacy_policy_link = "<a href='https://docs.google.com/document/d/1vBwBFJbYjn_jLhNvjALf_auXysNFzPmdh0mE6XV0_YI/edit?usp=sharing'>Пользовательским соглашением</a>"
@@ -93,15 +93,13 @@ async def show_instructions(message: types.Message):
     # await message.answer_photo(types.FSInputFile(example_photo_path))
     # Инструкция в формате видео
     media = [
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1434.mp4"), caption="Включите вспышку", width=448, height=848),
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1436.mp4"), caption="фронтальная проекция", width=448, height=848),
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1438.mp4"), caption="Нижняя проекция", width=448, height=848),
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1440.mp4"), caption="Верхня Проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1434.MOV"), caption="Включите вспышку", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1436.MOV"), caption="фронтальная проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1438.MOV"), caption="Нижняя проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1440.MOV"), caption="Верхня Проекция", width=448, height=848),
     ]
 
     await message.answer_media_group(media=media)
-
-    await message.answer("Готовы загрузить фото? Нажмите на кнопку ниже:", reply_markup=inline_upload_keyboard)
 
 
 

@@ -6,6 +6,7 @@ from .config import settings
 logger = logging.getLogger(__name__)
 
 async def create_tables():
+    # conn = None
     try:
         conn = await asyncpg.connect(settings.DB_URL)
         await conn.execute('''

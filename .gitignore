@@ -32,3 +32,6 @@ token*
 neiro/models/*
 /photos/
 
+# Иногрируем токен API Google (гугл блочит токен если находит его в публичном репозитории)
+
+save/smile-ai-bot-1dccd401d6ed.json

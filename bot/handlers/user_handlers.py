@@ -33,6 +33,8 @@ class FeedbackStates(StatesGroup):
     waiting_for_feedback = State()
     waiting_for_choice = State()
 
+#class SubsctiptionStates(StatesGroup):
+#    waiting_for_subscription = State()
 
 # --------------------- Базовые обработчики ---------------------
 @router.message(CommandStart())
@@ -74,6 +76,8 @@ async def skip_feedback(call: types.CallbackQuery, state: FSMContext):
     await log_event("feedback", "User skipped feedback", call.from_user.id)
     await call.message.edit_reply_markup()  # Убираем кнопки
     await call.message.answer("Спасибо за использование нашего сервиса!", reply_markup=main_keyboard)
+    await asyncio.sleep(1)
+    await call.message.answer("Вы можете оформить подписку на наш бот", reply_markup=inline_subscription_keyboard)
     await state.clear()
 
 
@@ -85,7 +89,15 @@ async def show_instructions(message: types.Message):
         "✅ Включите вспышку на телефоне, чтобы AI мог правильно распознать детали.\n"
         "✅ Используйте фронтальную камеру (селфи-камера) для всех фото."
     )
-
+    instructions_text = (
+        "Чтобы я смог точно проверить состояние твоих зубов, отправь мне всего 3 фотографии полости рта:\n"
+        "\n"
+        "1️⃣ Фронтальная (спереди):\n"
+        "\n"
+        "2️⃣ Верхняя челюсть\n"
+        "\n"
+        "3️⃣ Нижняя челюсть\n"
+    )
     # Путь к примеру фотографии (заглушка)
     example_photo_path = "bot/handlers/photo_2024-04-19_17-40-12.jpg"
     # Инструкция в форме фото
@@ -93,13 +105,15 @@ async def show_instructions(message: types.Message):
     # await message.answer_photo(types.FSInputFile(example_photo_path))
     # Инструкция в формате видео
     media = [
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1434.MOV"), caption="Включите вспышку", width=448, height=848),
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1436.MOV"), caption="фронтальная проекция", width=448, height=848),
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1438.MOV"), caption="Нижняя проекция", width=448, height=848),
-    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1440.MOV"), caption="Верхня Проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1434.mp4"), caption="Включите вспышку", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1436.mp4"), caption="фронтальная проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1438.mp4"), caption="Нижняя проекция", width=448, height=848),
+    InputMediaVideo(media=FSInputFile("bot/handlers/video/IMG_1440.mp4"), caption="Верхня Проекция", width=448, height=848),
     ]
-
+    await message.answer(instructions_text, reply_markup=main_keyboard)
     await message.answer_media_group(media=media)
+    await message.answer("Готовы загрузить фото? Нажмите на кнопку ниже:", reply_markup=inline_upload_keyboard)
+
 
 
 
@@ -130,8 +144,17 @@ async def process_feedback(message: types.Message, state: FSMContext):
     await log_event("feedback", message.text, message.from_user.id)
     logger.info(f"Feedback from {message.from_user.id}: {message.text}")
     await message.answer("✅ Спасибо за ваш отзыв!", reply_markup=main_keyboard)
+    await asyncio.sleep(1)
+    await message.answer("Вы можете оформить подписку на наш бот", reply_markup=inline_subscription_keyboard)
     await state.clear()
 
+
+# --------------------- Оформление подписки ---------------------
+@router.callback_query(F.data == "start_subscription")
+async def start_subscription(call: types.CallbackQuery):
+    """Обработчик для кнопки подписки"""
+    await log_event("user_action", "User started subscription", call.from_user.id)
+    await call.message.answer("Спасибо за оформление подписки", reply_markup=main_keyboard)
 
 # --------------------- Основной функционал ---------------------
 # Функция загрузки фото

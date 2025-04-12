@@ -50,19 +50,20 @@ feedback_request_keyboard = InlineKeyboardMarkup(
     ]
 )
 
-
-feedback_request_keyboard = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [InlineKeyboardButton(text="⭐ Оставить отзыв", callback_data="ask_feedback")],
-        [InlineKeyboardButton(text="🚫 Пропустить", callback_data="skip_feedback")]
-    ]
-)
-
 # Клавиатура для загрузки фото через Inline-кнопку
 inline_upload_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(text="📷 Загрузить фото", callback_data="start_upload")
+        ]
+    ]
+)
+
+# Кнопка с подпиской
+inline_subscription_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Оформить подписку", callback_data="start_subscription")
         ]
     ]
 )

@@ -232,7 +232,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
     # Формируем payload с base64
     payload = {
         "user_id": user_id,
-        "photos": photos_base64
+        "photos": photos_base64,
     }
     try:
         await send_to_save(payload)
@@ -249,6 +249,7 @@ async def finish_upload(message: types.Message, state: FSMContext):
 
     mouth_type = response.get("mouth_type", [])
     result_list = response.get("result_list", [])
+    result_dict = response.get("result_dict", {})
 
     # Преобразуем mouth_type в русский текст
     type_mapping = {
@@ -276,6 +277,8 @@ async def finish_upload(message: types.Message, state: FSMContext):
         reply_markup=main_keyboard
     )
 
+    await message.answer(recommendation(result_dict), reply_markup=main_keyboard)
+
     await state.clear()
     user_data.pop(user_id, None)
 
@@ -295,3 +298,33 @@ async def cancel_upload(message: types.Message, state: FSMContext):
     logger.info(f"User {message.from_user.id} canceled upload")
     await message.answer("Загрузка отменена", reply_markup=main_keyboard)
     await state.clear()
+
+
+def recommendation(result_dict):
+    total_type_0 = 0
+    total_type_1 = 0
+
+    # Считаем общее количество type_0 и type_1
+    for section in result_dict.values():
+        total_type_0 += section.get('type_0', 0)
+        total_type_1 += section.get('type_1', 0)
+
+    # Определяем приоритет вывода: сначала type_0, потом type_1
+    if total_type_0 >= 1:
+        return (
+            "🚨Обнаружен кариес.\n"
+            "Рекомендуем как можно скорее записаться к стоматологу. На ранней стадии лечение проходит быстро и безболезненно. "
+            "Заботься о себе и своей улыбке! 😷🦷"
+        )
+    elif total_type_1 >= 1:
+        return (
+            "🤔 Есть небольшое подозрение на кариес.\n"
+            "Это ещё не повод для паники, но стоит проконсультироваться со стоматологом для точной диагностики. "
+            "Лучше проверить сейчас, чем лечить потом! 🩺💬"
+        )
+    else:
+        return (
+            "😊 Отличные новости! Мы не обнаружили признаков кариеса.\n"
+            "Но не забывай: регулярная гигиена и профилактические осмотры у стоматолога — залог здоровой улыбки. "
+            "Продолжай в том же духе! 🦷✨"
+        )
